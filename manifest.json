@@ -109,8 +109,8 @@
 		"launchwebview": {
             "titleNView": {
                "backgroundcolor": "#168bbb",
-               "titletext": "首页",
-               "titlecolor": "#000000"
+               "titletext": "书架",
+               "titlecolor": "#FFFFFF"
             }
         },
         "statusbar": {

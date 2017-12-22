@@ -20,7 +20,7 @@
 			line-height: 25px;
 		}
 		.mui-bar {
-			background-color: #272727 !important
+			background-color: #272727fc !important
 		}
 		.fontColor{
 			color: #929292 !important
@@ -75,6 +75,7 @@
 			1111
 		</div>-->
 		<script src="../js/mui.min.js"></script>
+		<script src="../js/Chapter.js"></script>
 		<script type="text/javascript">
 			var _self = plus.webview.currentWebview();
 			mui.init({
@@ -104,7 +105,9 @@
 				body.style.width = (window.screen.availWidth-20) +'px'
 				//获取可放入的行数
 				MaxLine = Math.round(Maxheight / 25);
-				console.log("MaxLine:"+MaxLine);
+//				console.log("MaxLine:"+MaxLine);
+				Chapter.init(Maxheight,25)
+				Chapter.path();
 			});
 			mui.ready(function(){
 				plus.navigator.setFullscreen(true);
@@ -125,6 +128,7 @@
 					plus.navigator.setFullscreen(true);
 				}
 			});
+			//计算行高
 			function countLines() {
 				var ele = document.querySelector(".mui-content");
 			    var styles = window.getComputedStyle(ele, null);
