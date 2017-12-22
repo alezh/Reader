@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<form action="">
+			<div id="search" class="mui-input-row mui-search">				
+				<input id="keyword"  oninput="OnInput(event)" type="search" class="mui-input-clear" placeholder="输入书名或者作者名">				
+			</div>
+			</form>
+		</header>
+		<div class="mui-content">
+			
+		</div>
+		<script src="../js/mui.min.js"></script>
+		<script type="text/javascript">
+			mui.init();
+			var subpages = ["SearchAbout.html","SearchList.html"];//子页面
+			var subpage_style = {
+				top: '45px',
+				bottom: '0px'
+			};
+			var aniShow = {};
+			//创建子页面，首个选项卡页面显示，其它均隐藏；
+			mui.plusReady(function() {
+				var self = plus.webview.currentWebview();//获取当前窗口的WebviewObject对象
+				for (var i = 0; i < 4; i++) {
+					var temp = {};
+					var sub = plus.webview.create(subpages[i], subpages[i], subpage_style);//创建新的Webview窗口 //新窗口加载的HTML页面地址  新窗口的标识 窗口的样式（如窗口宽、高、位置等信息）
+					if (i > 0) {
+						sub.hide(); //隐藏Webview窗口
+					}else{
+						temp[subpages[i]] = "true";
+						mui.extend(aniShow,temp);//将两个对象合并成一个对象。
+					}
+					self.append(sub);//在Webview窗口中添加子窗口
+				}
+			});
+			//当前激活选项
+			var activeTab = subpages[0];
+			//提交事件
+			document.querySelector('form').addEventListener('submit', function(e){
+			    e.preventDefault(); // 阻止默认事件
+			    console.log("搜索");	
+			    openPage("SearchList.html");
+			});
+			function openPage(targetTab){
+			    if(mui.os.ios||aniShow[targetTab]){
+					plus.webview.show(targetTab);
+				}else{
+					//否则，使用fade-in动画，且保存变量
+					var temp = {};
+					temp[targetTab] = "true";
+					mui.extend(aniShow,temp);
+					plus.webview.show(targetTab,"fade-in",300);
+				}
+				//隐藏当前;
+				plus.webview.hide(activeTab);
+				//更改当前活跃的选项卡
+				activeTab = targetTab;
+			}
+//			var inputCache;
+//			document.getElementById("search").addEventListener('input',function(event){
+//				var e = event || window.event || arguments.callee.callee.arguments[0];
+//				var value = document.getElementById("keyword").value;
+//				if(value == null || value == undefined || value == ''){
+//					return;
+//				}
+//				inputCache = value;
+////				console.log(JSON.stringify(inputCache));
+//			});
+			
+//			document.getElementById("search").addEventListener('keyup',function(event){
+//				var e = event || window.event || arguments.callee.callee.arguments[0];
+//				console.log(e.keyCode);
+//			});
+			
+			var count = 0;//去重计数
+			function OnInput(event){
+				var value = document.getElementById("keyword").value;
+				if(count==0){
+					console.log('input:'+value);					
+				}
+				//去重还原
+				count++;
+				if(count == 3 ){
+					count = 0;
+				}				
+			}
+
+			
+			
+		</script>
+	</body>
+
+</html>
