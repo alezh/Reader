@@ -25,7 +25,7 @@ var Chapter = {
 			var len = this.mathLen(val)
 			if(this.lines < this.MaxLine){
 				this.create(val)
-			}else{				
+			}else{
 				var c = this.MaxLine - (this.lines - len);
 				console.log(c);
 				if(c>1){
