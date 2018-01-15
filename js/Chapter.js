@@ -59,7 +59,7 @@ var Chapter = {
 	last:function(){
 		
 	},
-	Line:function(para){
+	Line(para){
 		//废弃
 		var styles = window.getComputedStyle(para, null)
 		var lh = parseInt(styles.lineHeight);
@@ -69,11 +69,11 @@ var Chapter = {
 		this.lines += lc;
 		return lc
 	},
-	Linelen:function(){
+	Linelen(){
 		//计算 一行等写入多少字符
 		this.len = Math.round(this.width / this.fontSize);
 	},
-	mathLen:function(str){
+	mathLen(str){
 		//算计 字数需要多少行
 		var len = Math.ceil(str.length / this.len);
 		this.lines += len;
@@ -82,7 +82,7 @@ var Chapter = {
 	cutstr(str,line){
 		var len = (line - 1 ) * (this.len ) - 3;// -4空格符合
 		this.create(str.substr(0,len));
-		console.log(str.substr(len,str.length));
+		console.log(str.substr(len,str.length));//剩余的章节文字
 	}
 };
 //var _getbook = Chapter.prototype;
