@@ -16,7 +16,6 @@
 		}
 		.mui-content{
 			background-color:transparent;
-			margin: 10px;
 			line-height: 25px;
 		}
 		.mui-bar {
@@ -30,8 +29,26 @@
             transform: scaleY(0);
 		}
 		p{margin-bottom: 0px;text-align:justify}
+		.b-pages{
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 0px;
+			bottom: 0px;
+			height: auto;
+			padding: 10px;
+			background-color: #283548;
+		}
+		/*阴影*/
+		.shadow{
+			box-shadow: -4px 0 4px rgba(0,0,0,.1), 4px 0 4px rgba(0,0,0,.1)
+		}
+		.b-pages.transitioning {
+				-webkit-transition: -webkit-transform 300ms ease;
+				transition: transform 300ms ease;
+		}
 	</style>
-	<body style="background-color: #283548;">
+	<body style="position: fixed;z-index: 30;">
 		<header id="header" class="mui-bar mui-bar-nav tbhidden" style="box-shadow:0 1px 6px #000;">
 			<a class="mui-icon mui-action-back mui-icon mui-icon-left-nav mui-pull-left fontColor" ></a>
 			<h1 class="mui-title fontColor">标题</h1>
@@ -56,17 +73,32 @@
 			</a>
 		</nav>
 		<div class="mui-content">
-			
+			<div id="page4" class="b-pages" data-view="" style="z-index: 6;">
+				
+			</div>
+			<div id="page3" class="b-pages" data-view="" style="z-index: 5;">
+				
+			</div>
+			<div id="page2" class="b-pages" data-view="" style="z-index: 4;">
+				
+			</div>
+			<div id="page1" class="b-pages" data-view="" style="z-index: 3;">
+				
+			</div>
+			<div id="page0" class="b-pages" data-view="" style="z-index: 3;">
+				
+			</div>
 		</div>
 		<!--<div style="position:fixed;height: 50px;width: 50px;top:358px;bottom: 0;left: 100px;right: 100px;margin: 0 auto;background-color: #FFFFFF;">
 			1111
 		</div>-->
 		<script src="../js/mui.min.js"></script>
 		<script src="../js/Chapter.js"></script>
+		<script src="../js/view.js"></script>
 		<script type="text/javascript">
 			var _self = plus.webview.currentWebview();
 			mui.init({
-				swipeBack:true,
+				swipeBack:false,
 				beforeback: function(){
 //					var list = plus.webview.getWebviewById(_self.pageId);
 //					mui.fire(list,'screen');
@@ -89,16 +121,25 @@
 				var body = document.querySelector(".mui-content")
 				Maxheight = window.screen.availHeight - 20 ;
 				body.style.height = Maxheight +'px'
-				body.style.width = (window.screen.availWidth - 20) +'px';				
-				Chapter.init(Maxheight,25,body);
+				body.style.width = window.screen.availWidth +'px';
+				var AryDiv = ['#page4','#page3','#page2','#page1','#page0'];
+				AryDiv.forEach(function(value){
+					var page =  body.querySelector(value)
+					page.style.height = Maxheight + 40 +'px'
+					page.style.width = (window.screen.availWidth) +'px';
+				})
+				Chapter.init(Maxheight,25,body,AryDiv);
 				Chapter.getTxt();
+				var viewApi = mui('.mui-content').view({
+					defaultPage: '#page4'
+				});
 			});
 			mui.ready(function(){
 				//延迟全屏
 				setTimeout(function(){
 					plus.navigator.setFullscreen(true);
-				},200);				
-//				countLines();
+				},200);
+				
 			});
 			document.querySelector(".mui-content").addEventListener("tap",function(e){
 				var list = document.querySelectorAll(".tbhidden");
