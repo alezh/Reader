@@ -47,6 +47,16 @@
 				-webkit-transition: -webkit-transform 300ms ease;
 				transition: transform 300ms ease;
 		}
+		.transition {
+				-webkit-transition: -webkit-transform 50ms ease;
+				transition: transform 50ms ease;
+		}
+		.maxZindex{
+			z-index: 9 !important;
+		}
+		.minZindex{
+			z-index: 8 !important;
+		}
 	</style>
 	<body style="position: fixed;z-index: 30;">
 		<header id="header" class="mui-bar mui-bar-nav tbhidden" style="box-shadow:0 1px 6px #000;">
@@ -72,28 +82,15 @@
 				<span class="mui-tab-label">设置</span>
 			</a>
 		</nav>
-		<div class="mui-content">
-			<div id="page4" class="b-pages" data-view="" style="z-index: 6;">
-				
-			</div>
-			<div id="page3" class="b-pages" data-view="" style="z-index: 5;">
-				
-			</div>
-			<div id="page2" class="b-pages" data-view="" style="z-index: 4;">
-				
-			</div>
-			<div id="page1" class="b-pages" data-view="" style="z-index: 3;">
-				
-			</div>
-			<div id="page0" class="b-pages" data-view="" style="z-index: 3;">
-				
-			</div>
+		<div class="mui-content">			
+			<div id="page3" class="b-pages"></div>
+			<div id="page1" class="b-pages maxZindex"></div>
 		</div>
 		<!--<div style="position:fixed;height: 50px;width: 50px;top:358px;bottom: 0;left: 100px;right: 100px;margin: 0 auto;background-color: #FFFFFF;">
 			1111
 		</div>-->
 		<script src="../js/mui.min.js"></script>
-		<script src="../js/Chapter.js"></script>
+		<!--<script src="../js/Chapter.js"></script>-->
 		<script src="../js/view.js"></script>
 		<script type="text/javascript">
 			var _self = plus.webview.currentWebview();
@@ -109,7 +106,7 @@
 			mui.plusReady(function(){				
 				if(mui.os.ios){
 					_self.setStyle({popGesture:'none'});
-				}
+				}				
 				if(plus.navigator.isImmersedStatusbar()){
 					//浸泡式增高
 					immersed = plus.navigator.getStatusbarHeight();
@@ -122,16 +119,21 @@
 				Maxheight = window.screen.availHeight - 20 ;
 				body.style.height = Maxheight +'px'
 				body.style.width = window.screen.availWidth +'px';
-				var AryDiv = ['#page4','#page3','#page2','#page1','#page0'];
+				var AryDiv = ['#page1','#page3'];
 				AryDiv.forEach(function(value){
 					var page =  body.querySelector(value)
 					page.style.height = Maxheight + 40 +'px'
 					page.style.width = (window.screen.availWidth) +'px';
 				})
-				Chapter.init(Maxheight,25,body,AryDiv);
-				Chapter.getTxt();
 				var viewApi = mui('.mui-content').view({
-					defaultPage: '#page4'
+					Chapter:"http://192.168.2.126:8080/Chapter/",
+					ChapterList:"http://192.168.2.126:8080/ChapterList/",
+					Site:"/pbtxt",
+					bookId:_self.pageId,
+					defaultPage: '#page1',
+					Maxheight:Maxheight,
+					lineHeight:25,
+					AryDiv:AryDiv
 				});
 			});
 			mui.ready(function(){
@@ -139,7 +141,6 @@
 				setTimeout(function(){
 					plus.navigator.setFullscreen(true);
 				},200);
-				
 			});
 			document.querySelector(".mui-content").addEventListener("tap",function(e){
 				var list = document.querySelectorAll(".tbhidden");

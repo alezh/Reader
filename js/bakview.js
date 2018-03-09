@@ -9,34 +9,31 @@
 				hardwareAccelerated: true
 			}, options);
 			this.pages = this.view.querySelectorAll(".b-pages");
-			this.history = []; //history
+			this.historys = null; //history
 			this.maxScrollX = this.view.offsetWidth;
 			this.moved = this.dragging = this.IsAnimation = this.abs = false;
 			this.prev = 2;
 			this.next = 5;
-			this.x = this.y = this.chapterLen = 0;
+			this.x = this.y = 0;
 			this.translateZ = this.options.hardwareAccelerated ? ' translateZ(0)' : '';
 			this.ratio = 0;
 			this.book = new Map();
+			this.chapterId = '';
+			this.activePage = this.previousPage  = null ;		
 			this.cacheChapter = new Map();
-			this.activePage = this.previousPage = this.chapterId =  null ;	
+			this._initPage();
 			this._initDefaultPage(this.options.bookId);
 			this.initEvent();
-					
 		},
 		_initDefaultPage:function(bookId){
-			this._initPage();			
-			var listUrl = this.options.ChapterList + bookId + this.options.Site			
+			
+			var listUrl = this.options.ChapterList + bookId + this.options.Site;
 			//获取章节列表选择章节
-			this._ajax(listUrl,this._ChapterListStorage,false)
+			this._ajax(listUrl,this._ChapterListStorage);
 			//TODO::显示一页，翻页时候填充下一页数据
 			var chapter = this.options.Chapter + this.chapterId
 			//获取章节内容
-			this._ajax(chapter,this._Chapter,false)
-			for(var [key,value] of this.cacheChapter){
-				let url = this.options.Chapter + value._id
-				this._ajax(url,this._cacheChapter,true,value._id);
-			}
+			this._ajax(chapter,this._Chapter);			
 		},
 		_initPage:function(){
 			this.Maxheight = this.options.Maxheight
@@ -59,25 +56,25 @@
 		initEvent: function() {
 			this.view.addEventListener('click', this);
 			this.view.addEventListener('tap', this);
-			var self = this
-			this.pages.forEach(function(v,i){				
-				v.addEventListener('drag', self)
-				v.addEventListener('dragend', self)
-				v.addEventListener('webkitTransitionEnd', self)
-			});
+			for(var v of this.pages){
+				v.addEventListener('drag', this)
+				v.addEventListener('dragend', this)
+				v.addEventListener('webkitTransitionEnd', this)
+			}			
 		},
 		handleEvent: function(event) {
 			switch (event.type) {
 				case 'click':
-				console.log(event.target.offsetParent.id,event.target.offsetParent.className)
+//				console.log(event.target.offsetParent.className,event.target.offsetParent.id)
 //					this._click(event);
 					break;
 				case 'tap':
-//				console.log(JSON.stringify(event.currentTarget.id))
+//				console.log(document.querySelector("html").innerHTML)
 //					this._tap(event);
 					break;
 				case 'drag':
-//				console.log(JSON.stringify(event.currentTarget.id))
+//				console.log(this.chapterId)
+//				console.log(JSON.stringify(event.currentTarget.id,event.currentTarget.id))
 					this._drag(event);
 					break;
 				case 'dragend':
@@ -91,21 +88,15 @@
 		_drag: function(event){
 			if (this.isInTransition) {
 				return;
-			}			
-			var detail = event.detail;
-			this.abs = detail.deltaX > 0 ? true : (detail.deltaX <0 ? false : 0)
-			let paginate = this._isPaginate();
-			if(!paginate){
-				return;
 			}
+			var detail = event.detail;			
 			if (!this.dragging) {
+				this.abs = detail.deltaX > 0 ? true : (detail.deltaX <0 ? false : 0)
 				this.isBack = this.abs;
-				this._actverPage(event)
-				this._paginate(this.abs,paginate);
-				this._initPageTransform();
+				this._initPageTransform(event);
+				this._paginate(this.abs);
 			}
 			if(this.isBack != this.abs){
-				//锁死
 				return
 			}
 			if (this.dragging){
@@ -134,34 +125,26 @@
 				this.y = 0;
 			}
 		},
-		_actverPage:function(event){
+		_initPageTransform: function(event){
 			//当前活动页面初始化
-			for(var div of this.options.AryDiv){
-				if("#" + event.currentTarget.id !== div){
-					this.previousPage = this.view.querySelector(div);
-				}
+//			for(var div of this.options.AryDiv){
+//				if("#" + event.currentTarget.id !== div){
+//					this.previousPage = this.view.querySelector(div);
+//				}
+//			}
+			this.previousPage = null;
+			this.previousPage = event.currentTarget.nextElementSibling 
+			if(this.previousPage == null){
+				this.previousPage = event.currentTarget.previousSibling.previousSibling;
 			}
 			this.activePage = event.currentTarget;
-		},
-		_initPageTransform: function(){			
-			if(this.activePage && this.previousPage){
+			console.log(this.previousPage.id,this.activePage.id);
+			if(this.activePage){
 				//添加影子
-				this.previousPageClassList = this.previousPage.classList;
-				this.previousPageStyle = this.previousPage.style;
 				this.activePageClassList = this.activePage.classList;
-				this.activePageStyle = this.activePage.style;
-				if(this.abs){
-					//TODO::添加前进后退不同的效果					
-					this.previousPage.style['webkitTransform'] = this._getTranslateStr(- this.maxScrollX, 0);
-					this.previousPage.classList.add("shadow");					
-					this.previousPage.classList.add("maxZindex");
-					this.activePage.classList.remove("maxZindex");
-					
-					this.x = - this.maxScrollX;
-				}else{
-					this.activePage.classList.add("shadow");
-					this.x = 0;
-				}				
+				this.activePageStyle = this.activePage.style;		
+				this.activePage.classList.add("shadow");
+				this.x = 0;
 				this.dragging = true;
 				return true;
 			}
@@ -179,11 +162,7 @@
 		setTranslate: function(x, y) {
 			this.x = x;
 			this.y = y;
-			if(this.abs){
-				this.previousPage.style['webkitTransform'] = this._getTranslateStr(x, y);
-			}else{
-				this.activePage.style['webkitTransform'] = this._getTranslateStr(x, y);
-			}			
+			this.activePage.style['webkitTransform'] = this._getTranslateStr(x, y);		
 			this.lastX = this.x;
 			this.lastY = this.y;
 		},
@@ -198,6 +177,7 @@
 			if (!this.moved) {
 				return;
 			}
+			this.historys = this.activePage;
 			event.stopPropagation();
 			var detail = event.detail;
 			this._clearRequestAnimationFrame();
@@ -213,11 +193,7 @@
 				this.setTranslate(this.maxScrollX, 0);				
 			}else if(this.ratio < -0.2){
 				this.IsAnimation = true;
-				if(this.abs){
-					this.setTranslate(0, 0);	
-				}else{
-					this.setTranslate(-this.maxScrollX, 0);
-				}							
+				this.setTranslate(-this.maxScrollX, 0);				
 			}else {
 				this.IsAnimation = false;
 				this._cleanStyle(this.activePage);
@@ -234,7 +210,6 @@
 			//活动页面过渡处理
 			this.isInTransition = true;
 			this.activePageClassList.add(CLASS_TRANSITIONING);
-			this.previousPageClassList.add(CLASS_TRANSITIONING);
 		},
 		_cleanStyle: function(el) {
 			if (el) {
@@ -244,62 +219,43 @@
 		},
 		_webkitTransitionEnd: function(event){
 			this.dragging = this.moved = false;
-			if(this.abs){
-				if (this.previousPage !== event.currentTarget ) {
-					return;
-				}
-			}else{
-				if (this.activePage !== event.currentTarget ) {
-					return;
-				}
+			if (this.activePage !== event.currentTarget) {
+				return;
 			}
 			this.isInTransition = false;
 			this.activePageClassList.remove(CLASS_TRANSITIONING);
-			this.previousPageClassList.remove(CLASS_TRANSITIONING);
-			this.previousPage.classList.remove("shadow");
 			this.activePage.classList.remove("shadow");
-			if(this.IsAnimation){
+			if(this.IsAnimation){				
 				//动画完成后处理
 				this._netherSwap()
-				this.IsAnimation = false				
-				console.log(this.indexPage)
 			}
 		},
 		_netherSwap:function(){
 			this.previousPage.classList.add("maxZindex");
+//			this.previousPage.classList.remove("minZindex");
+//			this.activePage.classList.add("minZindex");
 			this.activePage.classList.remove("maxZindex");
-			this.activePage.style.webkitTransform = '';
-			if(!this.abs){
-				this.indexPage++;
-			}else if(this.abs){
-				this.indexPage--;
-			}
-		},
-		_isPaginate:function(){
-			if(this.abs && this.indexPage <= 0){
-				return false;
-			}else if(!this.abs && ((this.indexPage + 1) > this.chapterLen)){
-				return false;
-			}
-			return true;
+			this.activePage.style.webkitTransform = ''
+//			this.activePage.removeAttribute("style")
+//			this.activePage.style.height = this.Maxheight + 40 +'px'
+//			this.activePage.style.width = window.screen.availWidth +'px';
 		},
 		
 		
 		
-		_ajax:function(url,callback,async,id){
+		_ajax:function(url,callback){
 			var self = this
-//			var mask=mui.createMask();
 			mui.ajax(url,{
 				dataType:'json',//服务器返回json格式数据
-				type:'OPTIONS',//HTTP请求类型
+				type:'get',//HTTP请求类型
 				timeout:10000,//超时时间设置为10秒；
-				async: async,
+				async: false,
 				headers:{'Content-Type':'application/json'},
 				success:function(data){
-					//服务器返回响应，根据响应结果
+					//服务器返回响应，根据响应结果，分析是否登录成功；
 					if (data.code === 200) {
 						if (typeof callback === "function") {
-							callback(data.data,self,id);
+							callback(data.data,self);
 						}
 					}
 				},
@@ -322,9 +278,9 @@
 						break;
 					}
 				}
-				for(var k=1;k<=self.next;k++){
+				for(var k=1;k<self.next;k++){
 					key = i+k;
-					if(json[key]){
+					if(json[key]){						
 						self.cacheChapter.set(key,json[key]);
 					}						
 				}
@@ -352,22 +308,21 @@
 //			console.log(JSON.stringify(json))
 			self.book.set(self.chapterId,self._prepareBody(json));
 			//初始化页面
-			self._view();			
+			self._view();
 		},
 		_view:function(index,page,chapterId){
 			//TODO::页码记录！
 			this.chapterId = chapterId || this.chapterId ;
 			this.indexPage = page || this.indexPage;
-			var ps = this.chapter = this.book.get(this.chapterId);
-			this.chapterLen = ps.length - 1;
+			this.nowDiv = index || this.nowDiv
+			var ps = this.chapter = this.book.get(this.chapterId);			
 			var body = document.querySelector(this.options.AryDiv[0]);
+			this.nowDiv++;
 			for(var p of ps[this.indexPage]){
 				body.appendChild(p);
 			}
+			this.indexPage++;
 			return
-		},
-		_cacheChapter:function(json,self,id){
-			self.book.set(id,self._prepareBody(json));
 		},
 		_readJson:function(){
 			plus.io.resolveLocalFileSystemURL( "_www/data/book.json", function(entry) {
@@ -449,36 +404,32 @@
 			}
 			return para
 		},
-		_paginate:function(abs,paginate){
+		_paginate:function(abs){
 			if(abs){
 				this._previousDiv();
 			}else{
+				if(this.indexPage>1){
+					return
+				}
 				this._nextDiv();
 			}
 		},
 		_nextDiv:function(){
-			this.previousPage.innerHTML = "";
-//			var pages = this.book.get(this.chapterId);
-//			var pages = pages[this.indexPage];
-            var key = this.indexPage === 0 ? (this.indexPage++):this.indexPage;
-            var pages = this.chapter[this.indexPage+1]
+			var pages = this.book.get(this.chapterId);
+			pages = pages[this.indexPage]
 			if(pages != undefined){
 				for(var p of pages){
+					console.log(p.innerText)
 					this.previousPage.appendChild(p);
+				}
+				if(this.IsAnimation){
+					this.indexPage++;
 				}
 			}
+			return
 		},
 		_previousDiv:function(){
-			this.previousPage.innerHTML = "";
-//			var pages = this.book.get(this.chapterId);
-//			var page = pages[this.indexPage-1];
-            var key = this.indexPage > this.chapterLen ? (this.indexPage--):(this.indexPage);
-            var pages = this.chapter[this.indexPage-1]
-			if(pages != undefined){
-				for(var p of pages){
-					this.previousPage.appendChild(p);
-				}
-			}	
+			console.log("o")
 		}
 		
 	});

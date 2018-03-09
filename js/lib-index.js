@@ -71,7 +71,6 @@ var Index = {
 				id = href;
 			}
 			if(href && ~href.indexOf('.html')){
-				console.log(href);
 				mui.openWindow({
 					id:'Reader',
 					url:href,
@@ -81,7 +80,7 @@ var Index = {
 //						duration:'200'
 					},
 					extras:{
-						pageId:_self.id
+						pageId:id
 					}
 				});
 			}

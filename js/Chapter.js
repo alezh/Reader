@@ -31,8 +31,6 @@ var Chapter = {
 				self.lines = 0
 			}
 			var len = self.mathLen(value)
-			console.log('lines',self.lines)
-			console.log('MaxLine',self.MaxLine)
 			if(self.lines < self.MaxLine){ //未超出时
 				self.create(value)
 			}else{
@@ -105,7 +103,6 @@ var Chapter = {
 		this.create(str.substr(0,len));
 		this.div++
 		var txt = str.substr(len,str.length)
-		console.log(txt)
 		this.mathLen(txt)
 		this.write(txt);//剩余的章节文字
 	}
