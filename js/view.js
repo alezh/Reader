@@ -11,7 +11,7 @@
 			this.pages = this.view.querySelectorAll(".b-pages");
 			this.history = []; //history
 			this.maxScrollX = this.view.offsetWidth;
-			this.moved = this.dragging = this.IsAnimation = this.abs = false;
+			this.moved = this.dragging = this.IsAnimation = this.abs = this.isNext = false;
 			this.prev = 2;
 			this.next = 5;
 			this.x = this.y = this.chapterLen = 0;
@@ -48,7 +48,7 @@
 			this.divHeight = Maxheight + 20 +'px';
 			this.divWidth = window.screen.availWidth +'px';
 			this.indexPage = 0;
-			this.nowDiv = 0
+			this.cacheKey = 0
 			this.chapter = null;
 			this.initLineLen();
 		},
@@ -95,13 +95,13 @@
 			var detail = event.detail;
 			this.abs = detail.deltaX > 0 ? true : (detail.deltaX <0 ? false : 0)
 			let paginate = this._isPaginate();
-			if(!paginate){
+			if(!this._isNext(paginate)){
 				return;
 			}
 			if (!this.dragging) {
 				this.isBack = this.abs;
 				this._actverPage(event)
-				this._paginate(this.abs,paginate);
+				this._paginate(this.abs)
 				this._initPageTransform();
 			}
 			if(this.isBack != this.abs){
@@ -311,6 +311,7 @@
 		},
 		_ChapterListStorage:function(json,self){
 //			plus.storage.setItem(self.options.bookId,JSON.stringify(json))
+            //读取章节ID
 			var v = window.localStorage.getItem("now"+self.options.bookId)
 			if(v != undefined){
 				//获取当前阅读的章节
@@ -322,18 +323,18 @@
 						break;
 					}
 				}
-				for(var k=1;k<=self.next;k++){
+				for(let k=1;k<=self.next;k++){
 					key = i+k;
 					if(json[key]){
 						self.cacheChapter.set(key,json[key]);
 					}						
 				}
-				//TODO::获取其他章节做缓存  上3 中1 下5
-				if(i === 0){					
-					return;
-				}
-				for(var k=1;k<self.prev;k++){
-					key = i - k;
+//				//TODO::获取其他章节做缓存  上3 中1 下5
+//				if(i === 0){					
+//					return;
+//				}
+				for(let k=0;k<self.prev;k++){
+					key = i-k;
 					if(json[key]){
 						self.cacheChapter.set(key,json[key]);
 					}
@@ -449,7 +450,32 @@
 			}
 			return para
 		},
-		_paginate:function(abs,paginate){
+		_isNext:function(paginate){
+			if(this.abs){
+				if(paginate){
+					return true;
+				}
+				//TODO::前一章
+				let newChapter = this.cacheChapter.get((this.cacheKey - 1))
+				if(newChapter != undefined){
+					this.cacheKey++
+				}
+				return false;
+			}else{
+				if(paginate){
+					return true;
+				}
+				//TODO::下一章
+				let newChapter = this.cacheChapter.get((this.cacheKey + 1))
+				if(newChapter != null){
+					var ps = this.chapter = this.book.get(newChapter._id);
+					this.chapterLen = ps.length - 1;
+					this.cacheKey++
+				}
+				return false;
+			}
+		},
+		_paginate:function(abs){
 			if(abs){
 				this._previousDiv();
 			}else{
