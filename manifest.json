@@ -69,8 +69,9 @@
 		"Proximity": {
 			"description": "访问距离感应器"
 		},
-		"Storage": {},
-
+		"Storage": {
+			"description": "管理应用本地数据"
+		},
 		"Uploader": {
 			"description": "管理文件上传任务"
 		},

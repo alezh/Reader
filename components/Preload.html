@@ -6,6 +6,7 @@
 		<title></title>
 		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
 		<link href="../css/mui.min.css" rel="stylesheet" />
+		<link rel="stylesheet" href="../css/font-awesome.css" />
 	</head>
 	<style>
 		.mui-bar-tab~.mui-content{
@@ -44,8 +45,8 @@
 			box-shadow: -4px 0 4px rgba(0,0,0,.1), 4px 0 4px rgba(0,0,0,.1)
 		}
 		.b-pages.transitioning {
-				-webkit-transition: -webkit-transform 300ms ease;
-				transition: transform 300ms ease;
+				-webkit-transition: -webkit-transform 250ms ease;
+				transition: transform 250ms ease;
 		}
 		.transition {
 				-webkit-transition: -webkit-transform 50ms ease;
@@ -57,25 +58,27 @@
 		.minZindex{
 			z-index: 8 !important;
 		}
+		.mui-bar-tab .mui-tab-item.mui-active{
+			color: #929292;
+		}
+		.fa-min{
+			font-size: 20px !important;
+		}
 	</style>
 	<body style="position: fixed;z-index: 30;">
 		<header id="header" class="mui-bar mui-bar-nav tbhidden" style="box-shadow:0 1px 6px #000;">
 			<a class="mui-icon mui-action-back mui-icon mui-icon-left-nav mui-pull-left fontColor" ></a>
 			<h1 class="mui-title fontColor">标题</h1>
-			<button class="mui-btn mui-btn-link mui-pull-right fontColor" >编辑</button>
+			<!--<button class="mui-btn mui-btn-link mui-pull-right fontColor" >编辑</button>-->
 		</header>
 		<nav class="mui-bar mui-bar-tab tbhidden">
-			<a class="mui-tab-item mui-active" href="#tabbar">
-				<span class="mui-icon mui-icon-home"></span>
-				<span class="mui-tab-label">首页</span>
-			</a>
-			<a class="mui-tab-item" href="#tabbar-with-chat">
-				<span class="mui-icon mui-icon-email"><span class="mui-badge">9</span></span>
-				<span class="mui-tab-label">消息</span>
+			<a class="mui-tab-item mui-active" href="#ChapterList">
+				<span class="mui-icon fa fa-list-ul fa-min"></span>
+				<span class="mui-tab-label">目录</span>
 			</a>
 			<a class="mui-tab-item" href="#tabbar-with-contact">
-				<span class="mui-icon mui-icon-contact"></span>
-				<span class="mui-tab-label">通讯录</span>
+				<span class="mui-icon fa fa-moon-o fa-min fa-flip-horizontal"></span>
+				<span class="mui-tab-label">模式</span>
 			</a>
 			<a class="mui-tab-item" href="#tabbar-with-map">
 				<span class="mui-icon mui-icon-gear"></span>
@@ -102,11 +105,12 @@
 					return true;
 				}
 			});
+			var viewApi = null;
 			var MaxLine,Maxheight = 0;
-			mui.plusReady(function(){				
+			mui.plusReady(function(){
 				if(mui.os.ios){
 					_self.setStyle({popGesture:'none'});
-				}				
+				}
 				if(plus.navigator.isImmersedStatusbar()){
 					//浸泡式增高
 					immersed = plus.navigator.getStatusbarHeight();
@@ -114,6 +118,7 @@
 					t.style.height = (44+immersed)+'px'
 					t.style.paddingTop=immersed+'px';
 				}
+				
 				//设置显示最大高度
 				var body = document.querySelector(".mui-content")
 				Maxheight = window.screen.availHeight - 20 ;
@@ -125,7 +130,7 @@
 					page.style.height = Maxheight + 40 +'px'
 					page.style.width = (window.screen.availWidth) +'px';
 				})
-				var viewApi = mui('.mui-content').view({
+				viewApi = mui('.mui-content').view({
 					Chapter:"http://192.168.2.126:8080/Chapter/",
 					ChapterList:"http://192.168.2.126:8080/ChapterList/",
 					Site:"/pbtxt",
@@ -134,6 +139,26 @@
 					Maxheight:Maxheight,
 					lineHeight:25,
 					AryDiv:AryDiv
+				});
+				//预加载目录
+				ChaptersList = mui.preload({
+					url: 'ChapterList.html',
+					id: 'ChapterList',
+					styles:{
+						"render": "always",//一直渲染
+						"popGesture": "hide",
+						//"titleNView": titleNView//使用原生渐变导航
+					}
+				});
+				mui('.mui-bar-tab').on('tap', 'a', function(e) {
+					var targetTab = this.getAttribute('href');//#ChapterList					
+					if("#ChapterList" == targetTab){
+						mui.fire(ChaptersList, 'show_list', {
+							guid: _self.pageId,
+							nowChapter:viewApi.chapterId
+						});
+					}
+					
 				});
 			});
 			mui.ready(function(){

@@ -12,7 +12,7 @@
 			this.history = []; //history
 			this.maxScrollX = this.view.offsetWidth;
 			this.moved = this.dragging = this.IsAnimation = this.abs = this.isNext = false;
-			this.prev = 2;
+			this.prev = -2;
 			this.next = 5;
 			this.x = this.y = this.chapterLen = 0;
 			this.translateZ = this.options.hardwareAccelerated ? ' translateZ(0)' : '';
@@ -32,15 +32,22 @@
 			//TODO::显示一页，翻页时候填充下一页数据
 			var chapter = this.options.Chapter + this.chapterId
 			//获取章节内容
-			this._ajax(chapter,this._Chapter,false)
+			this._ajax(chapter,this._Chapter,false);
+			this._initCache(true);
+			
+		},
+		_initCache:function(async){
 			for(var [key,value] of this.cacheChapter){
 				let url = this.options.Chapter + value._id
-				this._ajax(url,this._cacheChapter,true,value._id);
+				if(this.book.has(value._id)){
+					continue;
+				}
+				this._ajax(url,this._cacheChapter,async,value._id);
 			}
 		},
 		_initPage:function(){
 			this.Maxheight = this.options.Maxheight
-			this.MaxLine = Math.round(this.Maxheight / this.options.lineHeight) - 1 ;
+			this.MaxLine = Math.round(this.Maxheight / this.options.lineHeight) ;
 			this.lines = 0; //显示的行数
 			this.width = window.screen.availWidth - 20 ; //每行宽度
 			this.fontSize = 14; //字体大小 14px
@@ -77,7 +84,6 @@
 //					this._tap(event);
 					break;
 				case 'drag':
-//				console.log(JSON.stringify(event.currentTarget.id))
 					this._drag(event);
 					break;
 				case 'dragend':
@@ -101,8 +107,8 @@
 			if (!this.dragging) {
 				this.isBack = this.abs;
 				this._actverPage(event)
-				this._paginate(this.abs)
 				this._initPageTransform();
+				this._paginate(this.abs)				
 			}
 			if(this.isBack != this.abs){
 				//锁死
@@ -261,8 +267,7 @@
 			if(this.IsAnimation){
 				//动画完成后处理
 				this._netherSwap()
-				this.IsAnimation = false				
-				console.log(this.indexPage)
+				this.IsAnimation = false
 			}
 		},
 		_netherSwap:function(){
@@ -274,11 +279,12 @@
 			}else if(this.abs){
 				this.indexPage--;
 			}
+			window.localStorage.setItem("index"+this.options.bookId,(this.indexPage - 1));//-1 表示 0-9  不减1-9
 		},
 		_isPaginate:function(){
-			if(this.abs && this.indexPage <= 0){
+			if(this.abs && (this.indexPage-1) <= 0){
 				return false;
-			}else if(!this.abs && ((this.indexPage + 1) > this.chapterLen)){
+			}else if(!this.abs && (this.indexPage > this.chapterLen)){
 				return false;
 			}
 			return true;
@@ -310,61 +316,66 @@
 			});
 		},
 		_ChapterListStorage:function(json,self){
-//			plus.storage.setItem(self.options.bookId,JSON.stringify(json))
+			plus.storage.getItem(self.options.bookId,JSON.stringify(json))
             //读取章节ID
-			var v = window.localStorage.getItem("now"+self.options.bookId)
+			self._ChapterSort(json)
+//			window.localStorage.removeItem("now"+self.options.bookId);
+		},
+		_ChapterSort:function(json,chapterId){
+			var v = chapterId || window.localStorage.getItem("now"+this.options.bookId)
 			if(v != undefined){
 				//获取当前阅读的章节
 				var i=0;
 				var key = 0;
 				for (; i < json.length; i++){
 					if(json[i]["_id"] === v){
-						self.chapterId = v;
+						this.chapterId = v;
 						break;
 					}
 				}
-				for(let k=1;k<=self.next;k++){
+				for(let k=1;k<=this.next;k++){
 					key = i+k;
 					if(json[key]){
-						self.cacheChapter.set(key,json[key]);
-					}						
+						this.cacheChapter.set(k,json[key]);
+					}
 				}
-//				//TODO::获取其他章节做缓存  上3 中1 下5
-//				if(i === 0){					
-//					return;
-//				}
-				for(let k=0;k<self.prev;k++){
-					key = i-k;
+				for(let k= 0;k>=this.prev;k--){
+					key = i+k;
 					if(json[key]){
-						self.cacheChapter.set(key,json[key]);
+						this.cacheChapter.set(k,json[key]);
 					}
 				}
 			}else{
-				self.chapterId = json[0]._id
-				window.localStorage.setItem("now"+self.options.bookId,self.chapterId)
+				this.chapterId = json[0]._id
+				window.localStorage.setItem("now"+this.options.bookId,this.chapterId)
 			}
-			if(!self.chapterId){
+			if(!this.chapterId){
 				return
 			}
-//			window.localStorage.removeItem("now"+self.options.bookId);
 		},
 		_Chapter:function(json,self){
 			//当前章节处理并显示
-//			console.log(JSON.stringify(json))
 			self.book.set(self.chapterId,self._prepareBody(json));
 			//初始化页面
-			self._view();			
+			self._view();
 		},
-		_view:function(index,page,chapterId){
+		_setChapterId:function(id){
+			this.chapterId = id;
+			window.localStorage.setItem("now"+this.options.bookId,id);
+		},
+		_view:function(index,chapterId){
 			//TODO::页码记录！
 			this.chapterId = chapterId || this.chapterId ;
-			this.indexPage = page || this.indexPage;
+			this.indexPage = index || window.localStorage.getItem("index"+this.options.bookId) || this.indexPage;			
 			var ps = this.chapter = this.book.get(this.chapterId);
 			this.chapterLen = ps.length - 1;
+			this.indexPage = parseInt(this.indexPage) > this.chapterLen ? this.chapterLen : parseInt(this.indexPage);
 			var body = document.querySelector(this.options.AryDiv[0]);
+			body.innerHTML = '';
 			for(var p of ps[this.indexPage]){
 				body.appendChild(p);
 			}
+			this.indexPage++;
 			return
 		},
 		_cacheChapter:function(json,self,id){
@@ -396,7 +407,7 @@
 			var v = body.shift();
 			title.innerText = value.title;
 			div.push(title);
-			this.lines++;
+			this.lines = 1;
 			for(; v != undefined ; v = body.shift()){
 				var page = this._prepareJson(v)
 				if(page[1] === 0){
@@ -417,23 +428,24 @@
 				}
 			}
 			pages.push(div);
+			this.lines = 0 ;
 			return pages;
 		},
 		_prepareJson:function(value,i){
 			var len = this.mathLen(value)
 			if(this.lines <= this.MaxLine){
-				return [value,0]
+				return [value,0,len]
 			}else{
 				//超出时切分				
 				var c = this.MaxLine - (this.lines - len);
 				if(c <= 0){
-					return [value,2]
+					return [value,2,len]
 				}
 				return this.cutstr(value,c);
 			}
 		},
 		mathLen:function(str){
-			var len = Math.ceil(str.length / this.len);
+			var len = Math.ceil((str.length + 3) / this.len);
 			this.lines += len;
 			return len
 		},
@@ -450,15 +462,69 @@
 			}
 			return para
 		},
+		JmpChapter:function(){
+			var chapter = this.book.get(chapterId);
+			let self = this;
+			if(chapter){				
+				this.options.AryDiv.forEach(function(v,i){
+					var d = self.view.querySelector(v);
+					if(i%2){
+						d.classList.remove("maxZindex");						
+					}else{
+						d.classList.add("maxZindex");
+					}
+				});
+				this._view('0',chapterId);
+			}else{
+				var json = plus.storage.getItem(this.options.bookId)
+				if(json != undefined){
+					json = JSON.parse(json);
+					this._ChapterSort(json,chapterId);
+					this._initCache(false)
+					this._view('0',chapterId);
+				}				
+			}
+		},
+		_Fliped:function(index,chapterId){
+			chapterId = chapterId || this.chapterId
+			var json = plus.storage.getItem(this.options.bookId)
+			if(json != undefined){
+				json = JSON.parse(json);
+				let i = 0;
+				for (;i<json.length;i++) {
+					if(json[i]._id === chapterId){
+						this._setChapterId(json[i]._id);
+						break;
+					}
+				}
+				if(i===0){
+					return false;
+				}
+				let key = index<0 ? this.next : this.prev ;
+				let cacheChapter = new Map()
+				for(let k= 0;k<8;k++){
+					i = i + index;
+					if(json[i]){
+						cacheChapter.set(key,json[i]);
+						index< 0 ? --key : ++key ;
+					}
+				}
+				this.cacheChapter = cacheChapter.size > 0 ? cacheChapter : this.cacheChapter;
+				this._initCache(false)
+				this.cacheKey = index<0 ? 6 : -3;
+			}
+		},
 		_isNext:function(paginate){
 			if(this.abs){
 				if(paginate){
 					return true;
 				}
 				//TODO::前一章
-				let newChapter = this.cacheChapter.get((this.cacheKey - 1))
-				if(newChapter != undefined){
-					this.cacheKey++
+				if(this._previousChapter()){
+					return true;
+				}else{
+					this._Fliped(-1);
+					return this._previousChapter();
 				}
 				return false;
 			}else{
@@ -466,11 +532,11 @@
 					return true;
 				}
 				//TODO::下一章
-				let newChapter = this.cacheChapter.get((this.cacheKey + 1))
-				if(newChapter != null){
-					var ps = this.chapter = this.book.get(newChapter._id);
-					this.chapterLen = ps.length - 1;
-					this.cacheKey++
+				if(this._nextChapter()){
+					return true;
+				}else{
+					this._Fliped(1);
+					return this._previousChapter();
 				}
 				return false;
 			}
@@ -481,13 +547,11 @@
 			}else{
 				this._nextDiv();
 			}
+			
 		},
 		_nextDiv:function(){
 			this.previousPage.innerHTML = "";
-//			var pages = this.book.get(this.chapterId);
-//			var pages = pages[this.indexPage];
-            var key = this.indexPage === 0 ? (this.indexPage++):this.indexPage;
-            var pages = this.chapter[this.indexPage+1]
+            var pages = this.chapter[this.indexPage]
 			if(pages != undefined){
 				for(var p of pages){
 					this.previousPage.appendChild(p);
@@ -496,17 +560,39 @@
 		},
 		_previousDiv:function(){
 			this.previousPage.innerHTML = "";
-//			var pages = this.book.get(this.chapterId);
-//			var page = pages[this.indexPage-1];
-            var key = this.indexPage > this.chapterLen ? (this.indexPage--):(this.indexPage);
-            var pages = this.chapter[this.indexPage-1]
+            var pages = this.chapter[this.indexPage-2];//2: 下一页 + 当前页
 			if(pages != undefined){
 				for(var p of pages){
 					this.previousPage.appendChild(p);
 				}
 			}	
+		},
+		_nextChapter:function(){
+			//TODO::下一章
+			let newChapter = this.cacheChapter.get((this.cacheKey + 1))
+			if(newChapter != undefined){
+				this._setChapterId(newChapter._id);
+				var ps = this.chapter = this.book.get(newChapter._id);
+				this.chapterLen = ps.length - 1;
+				this.cacheKey++;
+				this.indexPage = 0;
+				return true;
+			}
+			return false;
+		},
+		_previousChapter:function(){
+			//TODO::前一章
+			let newChapter = this.cacheChapter.get((this.cacheKey - 1))
+			if(newChapter != undefined){
+				this._setChapterId(newChapter._id);
+				var ps = this.chapter = this.book.get(newChapter._id);
+				this.cacheKey--;
+				this.indexPage= this.chapter.length + 1;
+				this.chapterLen = ps.length - 1;
+				return true;
+			}
+			return false;
 		}
-		
 	});
 	
 	$.fn.view = function(options) {

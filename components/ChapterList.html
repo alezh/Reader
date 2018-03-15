@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<style type="text/css">
+		.mui-bar-tab~.mui-content{
+			padding-bottom: 0px;
+		}
+		.mui-bar-nav~.mui-content{
+			padding-top: 9px;
+		}
+		.mui-bar {
+			background-color: #272727fc !important;
+		}
+		.red{
+			color: red !important;
+		}
+		.mui-ios .mui-table-view-cell{
+			font-size:13px;
+			padding: 7px 15px;
+		}
+</style>
+	</head>
+	<header id="header" class="mui-bar mui-bar-nav" style="box-shadow:0 1px 6px #000;">
+	</header>
+	<div class="mui-content">
+		<ul class="mui-table-view">
+		</ul>
+	</div>
+	<body>
+		<script src="../js/mui.min.js"></script>
+		<script type="text/javascript">
+			mui.init({
+				swipeBack:false
+			});
+			var _self = plus.webview.currentWebview();
+			var immersed = 0; 
+			mui.plusReady(function(){
+				if(mui.os.ios){
+//					_self.setStyle({popGesture:'none'});
+				}
+				if(plus.navigator.isImmersedStatusbar()){
+					//浸泡式增高
+					immersed = plus.navigator.getStatusbarHeight();
+					var t=document.getElementById('header');
+					t.style.height = immersed+'px'
+				}
+//				plus.navigator.setStatusBarBackground("#FF0000");
+				console.log("plusReady")
+			});
+			mui.ready(function(){
+				document.addEventListener('show_list', function(event){
+					var guid = event.detail.guid;
+					var nowId = event.detail.nowChapter;
+					if(!guid) {
+						return;
+					}
+					var ul = document.querySelector(".mui-table-view")
+					var json = plus.storage.getItem(guid)
+					let i = 0;
+					if(json != undefined){
+						json = JSON.parse(json);
+						for(;i<json.length;i++){
+							let li = document.createElement("li");
+							li.classList.add("mui-table-view-cell");
+							li.id = json[i]._id;
+							li.innerText = json[i].ChapterName;
+							if(json[i]._id == nowId){
+								li.classList.add("red");
+							}
+							ul.appendChild(li);
+						}
+					}
+//					document.querySelector("#"+nowId)
+					console.log(ul.innerHTML);
+					_self.show({aniShow:'slide-in-bottom'});
+				});
+				
+			});
+		</script>
+	</body>
+
+</html>
